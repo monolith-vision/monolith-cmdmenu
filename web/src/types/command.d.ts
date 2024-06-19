@@ -8,7 +8,8 @@ interface CommandArgumentChoice {
 interface CommandArgument {
 	name: string;
 	type: CommandArgumentTypes;
-	choices: CommandArgumentChoice[];
+	required?: boolean;
+	choices?: CommandArgumentChoice[];
 }
 
 interface CommandBase {
@@ -17,6 +18,5 @@ interface CommandBase {
 }
 
 interface Command extends CommandBase {
-	description?: string;
 	arguments?: CommandArgument[];
 }
