@@ -1,57 +1,118 @@
 import { useNuiEvent } from '@/lib/hooks';
 import { useKeyDown } from '@/lib/keys';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
-import Results from './components/results';
 import useCommandStore from '@/stores/commands';
 
+import { cn, setTextRange } from '@/lib/utils';
+
+import Results from './components/results';
+import Arguments from './components/arguments';
+import { ArrowRightToLine } from 'lucide-react';
+
 export default function CommandMenu() {
-	const [input, setInput] = useState('');
-	const { commands, setCommands } = useCommandStore();
-	const [matchingCommand, setMatchingCommand] = useState<
-		Command | undefined
-	>();
+	const inputRef = useRef<HTMLSpanElement>(null);
+	const {
+		input,
+		commands,
+		matchingCommand,
+		setCommands,
+		setInput,
+		setMatchingCommand,
+	} = useCommandStore();
 
 	useEffect(() => {
-		if (input.length)
-			setMatchingCommand(
-				commands.find(
-					(c) =>
-						c.name
-							.toLowerCase()
-							.search(input.split(' ')[0].toLowerCase()) > -1,
-				),
-			);
-	}, [input, commands]);
+		if (!input.length) return setMatchingCommand(undefined);
+
+		const lowered = input.split(' ')[0].trim().toLowerCase();
+
+		setMatchingCommand(
+			commands.find((c) => c.name.toLowerCase().startsWith(lowered)),
+		);
+	}, [input, commands, setMatchingCommand]);
+
+	useEffect(() => {
+		if (!inputRef.current) return;
+
+		inputRef.current.textContent = input;
+
+		if (inputRef.current.childNodes[0])
+			setTextRange(inputRef.current.childNodes[0], input.length);
+	}, [input, inputRef]);
 
 	useNuiEvent<Command[]>('UpdateCommands', (commands) =>
-		setCommands({ commands }),
+		setCommands(
+			commands.sort((a, b) =>
+				a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
+			),
+		),
 	);
 
 	useKeyDown('Tab', (e) => {
-		if (!matchingCommand) return;
+		if (
+			!matchingCommand ||
+			!inputRef.current ||
+			e.target !== inputRef.current
+		)
+			return;
 
 		e.preventDefault();
 
-		setInput(matchingCommand?.name);
+		inputRef.current.textContent = matchingCommand.name;
+		setInput(matchingCommand.name);
+
+		setTextRange(
+			inputRef.current.childNodes[0],
+			matchingCommand.name.length,
+		);
 	});
 
+	const focusInput: React.MouseEventHandler<HTMLDivElement> = (e) => {
+		if (!inputRef.current || !(e.target as HTMLElement).dataset.focus)
+			return;
+
+		inputRef.current.focus();
+
+		if (inputRef.current.childNodes[0])
+			setTextRange(inputRef.current.childNodes[0], input.length);
+	};
+
 	return (
-		<main className="absolute w-[700px] min-h-24 max-h-[600px] bg-black border rounded-xl">
-			<div className="relative w-full h-12 flex items-center border-b">
-				<div className="text-white/25 w-full px-4">
-					<h1 className="text-base font-medium">
-						{input.length === 0
-							? 'Enter Command'
-							: matchingCommand?.name}
-					</h1>
-				</div>
-				<input
-					value={input}
-					type="text"
-					className="absolute w-full h-12 outline-none text-white px-4 font-medium bg-transparent placeholder:text-white/25"
-					onChange={({ currentTarget: { value } }) => setInput(value)}
+		<main className="absolute w-[650px] min-h-24 max-h-[600px] bg-background border rounded-xl">
+			<div
+				data-focus
+				className="relative w-full px-4 py-3 h-14 flex items-center border-b"
+				onClick={focusInput}
+			>
+				<span
+					data-focus
+					contentEditable
+					suppressContentEditableWarning
+					ref={inputRef}
+					className="max-w-full text-sm font-medium text-foreground outline-none"
+					onInput={(e) => {
+						e.preventDefault();
+						setInput(e.currentTarget.textContent ?? '');
+					}}
 				/>
+				<span data-focus className="text-foreground/25">
+					{matchingCommand?.name.substring(
+						input.split(' ')[0].length,
+					) ||
+						(!input.length && 'Enter Command')}
+				</span>
+				<Arguments />
+				<span
+					className={cn(
+						'flex gap-2 items-center px-1.5 py-1 bg-accent/80 rounded-md text-sm text-foreground translate-x-2 ml-auto opacity-0 transition-all duration-300',
+						matchingCommand !== undefined &&
+							input.split(' ')[0].trim().toLowerCase() !==
+								matchingCommand?.name &&
+							'opacity-100 translate-x-0',
+					)}
+				>
+					<ArrowRightToLine size={15} />
+				</span>
 			</div>
 			<Results />
 		</main>
