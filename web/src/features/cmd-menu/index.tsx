@@ -7,7 +7,7 @@ import useCommandStore from '@/stores/commands';
 import { cn, setTextRange } from '@/lib/utils';
 
 import Results from './components/results';
-import Arguments from './components/arguments';
+import Argument from './components/argument';
 import { ArrowRightToLine } from 'lucide-react';
 
 export default function CommandMenu() {
@@ -16,10 +16,14 @@ export default function CommandMenu() {
 		input,
 		commands,
 		matchingCommand,
-		setCommands,
 		setInput,
+		setCommands,
 		setMatchingCommand,
+		setCommandValues,
 	} = useCommandStore();
+
+	const isInputMatching =
+		input.split(' ')[0].trim().toLowerCase() === matchingCommand?.name;
 
 	useEffect(() => {
 		if (!input.length) return setMatchingCommand(undefined);
@@ -40,6 +44,13 @@ export default function CommandMenu() {
 			setTextRange(inputRef.current.childNodes[0], input.length);
 	}, [input, inputRef]);
 
+	useEffect(() => {
+		if (matchingCommand && matchingCommand.arguments)
+			setCommandValues(
+				Array(matchingCommand.arguments.length).fill(null),
+			);
+	}, [setCommandValues, matchingCommand]);
+
 	useNuiEvent<Command[]>('UpdateCommands', (commands) =>
 		setCommands(
 			commands.sort((a, b) =>
@@ -48,24 +59,19 @@ export default function CommandMenu() {
 		),
 	);
 
-	useKeyDown('Tab', (e) => {
-		if (
-			!matchingCommand ||
-			!inputRef.current ||
-			e.target !== inputRef.current
-		)
-			return;
+	const getFocusedIndex = (
+		elements: NodeListOf<Element>,
+		focusedElement: HTMLElement,
+	): number => {
+		let focusedIndex = -1;
 
-		e.preventDefault();
-
-		inputRef.current.textContent = matchingCommand.name;
-		setInput(matchingCommand.name);
-
-		setTextRange(
-			inputRef.current.childNodes[0],
-			matchingCommand.name.length,
+		elements.forEach(
+			(element, index) =>
+				element === focusedElement && (focusedIndex = index),
 		);
-	});
+
+		return focusedIndex;
+	};
 
 	const focusInput: React.MouseEventHandler<HTMLDivElement> = (e) => {
 		if (!inputRef.current || !(e.target as HTMLElement).dataset.focus)
@@ -77,6 +83,53 @@ export default function CommandMenu() {
 			setTextRange(inputRef.current.childNodes[0], input.length);
 	};
 
+	useKeyDown('Tab', (e) => {
+		if (
+			!matchingCommand ||
+			!inputRef.current ||
+			(e.target !== inputRef.current &&
+				!(e.target as HTMLElement).dataset.argument)
+		)
+			return;
+
+		e.preventDefault();
+
+		if (inputRef.current.textContent === matchingCommand.name) {
+			const elements = document.querySelectorAll('[data-argument]');
+			const focusedElement = document.activeElement as HTMLElement;
+			const focusedIndex = getFocusedIndex(elements, focusedElement);
+			let rangeElement = inputRef.current;
+
+			const nextItem = elements.item(
+				focusedIndex + 1,
+			) as HTMLElement | null;
+
+			if (
+				!focusedElement ||
+				!focusedElement.dataset.argument ||
+				focusedIndex === -1
+			)
+				rangeElement = elements.item(0) as HTMLElement;
+			else if (nextItem) rangeElement = nextItem;
+
+			rangeElement.focus();
+			setTextRange(
+				rangeElement.childNodes[0],
+				rangeElement.textContent?.length ?? -1,
+			);
+
+			return;
+		}
+
+		inputRef.current.textContent = matchingCommand.name;
+		setInput(matchingCommand.name);
+
+		setTextRange(
+			inputRef.current.childNodes[0],
+			matchingCommand.name.length,
+		);
+	});
+
 	return (
 		<main className="absolute w-[650px] min-h-24 max-h-[600px] bg-background border rounded-xl">
 			<div
@@ -85,10 +138,10 @@ export default function CommandMenu() {
 				onClick={focusInput}
 			>
 				<span
+					ref={inputRef}
 					data-focus
 					contentEditable
 					suppressContentEditableWarning
-					ref={inputRef}
 					className="max-w-full text-sm font-medium text-foreground outline-none"
 					onInput={(e) => {
 						e.preventDefault();
@@ -97,18 +150,24 @@ export default function CommandMenu() {
 				/>
 				<span data-focus className="text-foreground/25">
 					{matchingCommand?.name.substring(
-						input.split(' ')[0].length,
+						input.split(' ')[0].trim().length,
 					) ||
 						(!input.length && 'Enter Command')}
 				</span>
-				<Arguments />
+				<div className="flex items-center gap-2 ml-3">
+					{matchingCommand?.arguments?.map((argument, i) => (
+						<Argument
+							key={i}
+							index={i}
+							{...argument}
+							visible={isInputMatching}
+						/>
+					))}
+				</div>
 				<span
 					className={cn(
 						'flex gap-2 items-center px-1.5 py-1 bg-accent/80 rounded-md text-sm text-foreground translate-x-2 ml-auto opacity-0 transition-all duration-300',
-						matchingCommand !== undefined &&
-							input.split(' ')[0].trim().toLowerCase() !==
-								matchingCommand?.name &&
-							'opacity-100 translate-x-0',
+						isInputMatching && 'opacity-100 translate-x-0',
 					)}
 				>
 					<ArrowRightToLine size={15} />
