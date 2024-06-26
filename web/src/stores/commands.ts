@@ -16,43 +16,7 @@ interface CommandStore {
 
 const useCommandStore = create<CommandStore>((set) => ({
 	input: '',
-	commands: [
-		{
-			name: 'givemoney',
-			arguments: [
-				{
-					name: 'Player',
-					type: 'playerId',
-					required: true,
-				},
-				{
-					name: 'Account',
-					type: 'string',
-					required: true,
-					choices: [
-						{
-							label: 'Money',
-							value: 'money',
-						},
-						{
-							label: 'Black Money',
-							value: 'black_money',
-						},
-						{
-							label: 'Bank Balance',
-							value: 'bank',
-						},
-					],
-				},
-			],
-			arity: -1,
-		},
-		{
-			name: 'giveweapon',
-			arguments: [],
-			arity: -1,
-		},
-	],
+	commands: [],
 	commandValues: [],
 	setInput: (input) => set({ input }),
 	setCommands: (commands) => set({ commands }),

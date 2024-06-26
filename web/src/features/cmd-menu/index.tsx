@@ -3,6 +3,7 @@ import { useKeyDown } from '@/lib/keys';
 import { useEffect, useRef, useState } from 'react';
 
 import useCommandStore from '@/stores/commands';
+import usePlayerStore from '@/stores/players';
 
 import { fetchNui } from '@/lib';
 import { cn, setTextRange } from '@/lib/utils';
@@ -27,6 +28,8 @@ export default function CommandMenu() {
 		setMatchingCommand,
 		setFocusedArgument,
 	} = useCommandStore();
+
+	const { setPlayers } = usePlayerStore();
 
 	const isInputMatching =
 		input.split(' ')[0].trim().toLowerCase() === matchingCommand?.name;
@@ -62,13 +65,14 @@ export default function CommandMenu() {
 	}, [setCommandValues, matchingCommand]);
 
 	useEffect(() => {
-		if (!display)
-			setTimeout(() => {
-				setInput('');
-				setCommandValues([]);
-				setMatchingCommand(undefined);
-				setFocusedArgument(undefined);
-			}, 500);
+		if (display) return;
+
+		setTimeout(() => {
+			setInput('');
+			setCommandValues([]);
+			setMatchingCommand(undefined);
+			setFocusedArgument(undefined);
+		}, 500);
 	}, [
 		display,
 		setInput,
@@ -77,6 +81,8 @@ export default function CommandMenu() {
 		setFocusedArgument,
 	]);
 
+	useNuiEvent<boolean>('ToggleMenu', toggleDisplay);
+
 	useNuiEvent<Command[]>('UpdateCommands', (commands) =>
 		setCommands(
 			commands.sort((a, b) =>
@@ -84,6 +90,8 @@ export default function CommandMenu() {
 			),
 		),
 	);
+
+	useNuiEvent<Player[]>('UpdatePlayers', setPlayers);
 
 	const focusInput: React.MouseEventHandler<HTMLDivElement> = (e) => {
 		if (!inputRef.current || !(e.target as HTMLElement).dataset.focus)
@@ -147,7 +155,8 @@ export default function CommandMenu() {
 			!matchingCommand ||
 			!matchingCommand.arguments ||
 			input !== matchingCommand.name ||
-			(document.activeElement as HTMLElement).dataset.argument
+			((document.activeElement as HTMLElement).dataset.argument &&
+				!e.shiftKey)
 		)
 			return;
 
@@ -163,8 +172,6 @@ export default function CommandMenu() {
 			command,
 		}).then(() => toggleDisplay(false));
 	});
-
-	useNuiEvent<boolean>('toggleMenu', toggleDisplay);
 
 	return (
 		<div className="absolute translate-y-1/4 w-[650px] h-[350px]">
