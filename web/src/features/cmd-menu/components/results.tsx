@@ -30,6 +30,10 @@ export default function Results() {
 			: (focusedArgument?.choices as CommandArgumentChoice[]);
 
 	useEffect(() => {
+		setSelected(0);
+	}, [context]);
+
+	useEffect(() => {
 		if (!input.length) return setResults([]);
 
 		const lowered = input.split(' ')[0].trim().toLowerCase();
@@ -74,13 +78,18 @@ export default function Results() {
 		});
 	});
 
-	useKeyDown('Enter', (e) => {
+	const select = (e: KeyboardEvent) => {
 		e.preventDefault();
 
 		switch (context) {
 			case 'choice':
 			case 'player': {
-				if (!matchingCommand || !matchingCommand.arguments) return;
+				if (
+					!matchingCommand ||
+					!matchingCommand.arguments ||
+					!(document.activeElement as HTMLElement).dataset.argument
+				)
+					return;
 
 				const index = matchingCommand.arguments.findIndex(
 					(a) => a.name === focusedArgument?.name,
@@ -101,10 +110,19 @@ export default function Results() {
 				break;
 			}
 			case 'command':
-				setInput(results[selected].name);
+				if (
+					results.length &&
+					selected > -1 &&
+					results[selected] !== undefined &&
+					input !== results[selected].name
+				)
+					setInput(results[selected].name);
 				break;
 		}
-	});
+	};
+
+	useKeyDown('Enter', select);
+	useKeyDown('Tab', select);
 
 	return (
 		<div className="flex flex-col gap-1 overflow-y-scroll p-2">

@@ -23,10 +23,12 @@ const useCommandStore = create<CommandStore>((set) => ({
 				{
 					name: 'Player',
 					type: 'playerId',
+					required: true,
 				},
 				{
 					name: 'Account',
 					type: 'string',
+					required: true,
 					choices: [
 						{
 							label: 'Money',

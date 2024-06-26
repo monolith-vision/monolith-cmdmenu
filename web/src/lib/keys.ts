@@ -1,7 +1,7 @@
 import { MutableRefObject, useEffect, useRef } from 'react';
 import { noop } from './constants';
 
-export const useKeyEvent = (
+const useKeyEvent = (
 	action: 'keydown' | 'keyup',
 	key: string,
 	handler: (data: KeyboardEvent) => void,
@@ -15,20 +15,19 @@ export const useKeyEvent = (
 
 	useEffect(() => {
 		const keyListener = (event: KeyboardEvent) => {
-			if (savedHandler.current && event.key === key)
-				savedHandler.current(event);
+			if (event.key === key) savedHandler.current(event);
 		};
 
 		window.addEventListener(action, keyListener);
 
 		return () => window.removeEventListener(action, keyListener);
-	}, [action, key, handler]);
+	}, [action, key, savedHandler]);
 };
 
-export const useKeyUp = (key: string, handler: (data: KeyboardEvent) => void) =>
+const useKeyDown = (key: string, handler: (data: KeyboardEvent) => void) =>
+	useKeyEvent('keydown', key, handler);
+
+const useKeyUp = (key: string, handler: (data: KeyboardEvent) => void) =>
 	useKeyEvent('keyup', key, handler);
 
-export const useKeyDown = (
-	key: string,
-	handler: (data: KeyboardEvent) => void,
-) => useKeyEvent('keydown', key, handler);
+export { useKeyEvent, useKeyDown, useKeyUp };

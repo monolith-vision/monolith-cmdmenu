@@ -1,29 +1,39 @@
 import { useNuiEvent } from '@/lib/hooks';
 import { useKeyDown } from '@/lib/keys';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import useCommandStore from '@/stores/commands';
 
+import { fetchNui } from '@/lib';
 import { cn, setTextRange } from '@/lib/utils';
 
 import Results from './components/results';
 import Argument from './components/argument';
 import { ArrowRightToLine } from 'lucide-react';
+import { CSSTransition } from 'react-transition-group';
 
 export default function CommandMenu() {
 	const inputRef = useRef<HTMLSpanElement>(null);
+	const [focusedIndex, setFocusedIndex] = useState(-1);
+	const [display, toggleDisplay] = useState(false);
 	const {
 		input,
 		commands,
+		commandValues,
 		matchingCommand,
 		setInput,
 		setCommands,
-		setMatchingCommand,
 		setCommandValues,
+		setMatchingCommand,
+		setFocusedArgument,
 	} = useCommandStore();
 
 	const isInputMatching =
 		input.split(' ')[0].trim().toLowerCase() === matchingCommand?.name;
+
+	useEffect(() => {
+		setCommandValues([]);
+	}, [matchingCommand, setCommandValues]);
 
 	useEffect(() => {
 		if (!input.length) return setMatchingCommand(undefined);
@@ -51,6 +61,22 @@ export default function CommandMenu() {
 			);
 	}, [setCommandValues, matchingCommand]);
 
+	useEffect(() => {
+		if (!display)
+			setTimeout(() => {
+				setInput('');
+				setCommandValues([]);
+				setMatchingCommand(undefined);
+				setFocusedArgument(undefined);
+			}, 500);
+	}, [
+		display,
+		setInput,
+		setCommandValues,
+		setMatchingCommand,
+		setFocusedArgument,
+	]);
+
 	useNuiEvent<Command[]>('UpdateCommands', (commands) =>
 		setCommands(
 			commands.sort((a, b) =>
@@ -58,20 +84,6 @@ export default function CommandMenu() {
 			),
 		),
 	);
-
-	const getFocusedIndex = (
-		elements: NodeListOf<Element>,
-		focusedElement: HTMLElement,
-	): number => {
-		let focusedIndex = -1;
-
-		elements.forEach(
-			(element, index) =>
-				element === focusedElement && (focusedIndex = index),
-		);
-
-		return focusedIndex;
-	};
 
 	const focusInput: React.MouseEventHandler<HTMLDivElement> = (e) => {
 		if (!inputRef.current || !(e.target as HTMLElement).dataset.focus)
@@ -83,40 +95,38 @@ export default function CommandMenu() {
 			setTextRange(inputRef.current.childNodes[0], input.length);
 	};
 
-	useKeyDown('Tab', (e) => {
-		if (
-			!matchingCommand ||
-			!inputRef.current ||
-			(e.target !== inputRef.current &&
-				!(e.target as HTMLElement).dataset.argument)
-		)
+	const focusElement = (index: number) => {
+		const elements = document.querySelectorAll('[data-argument]');
+		const inputEl = inputRef.current;
+
+		if (inputEl && index === -1) {
+			inputEl.focus();
+			setTextRange(inputEl.childNodes[0], input.length);
 			return;
+		}
+
+		if (!elements[index]) return;
+
+		const element = elements[index] as HTMLElement;
+
+		element.focus();
+		setTextRange(element.childNodes[0], element.textContent?.length ?? -1);
+	};
+
+	useKeyDown('Tab', (e) => {
+		if (!matchingCommand || !inputRef.current) return;
 
 		e.preventDefault();
 
 		if (inputRef.current.textContent === matchingCommand.name) {
 			const elements = document.querySelectorAll('[data-argument]');
-			const focusedElement = document.activeElement as HTMLElement;
-			const focusedIndex = getFocusedIndex(elements, focusedElement);
-			let rangeElement = inputRef.current;
+			const totalElements = elements.length;
 
-			const nextItem = elements.item(
-				focusedIndex + 1,
-			) as HTMLElement | null;
+			let nextIndex = (focusedIndex + 1) % (totalElements + 1);
+			if (nextIndex === totalElements) nextIndex = -1;
 
-			if (
-				!focusedElement ||
-				!focusedElement.dataset.argument ||
-				focusedIndex === -1
-			)
-				rangeElement = elements.item(0) as HTMLElement;
-			else if (nextItem) rangeElement = nextItem;
-
-			rangeElement.focus();
-			setTextRange(
-				rangeElement.childNodes[0],
-				rangeElement.textContent?.length ?? -1,
-			);
+			setFocusedIndex(nextIndex);
+			focusElement(nextIndex);
 
 			return;
 		}
@@ -130,50 +140,88 @@ export default function CommandMenu() {
 		);
 	});
 
+	useKeyDown('Enter', (e) => {
+		e.preventDefault();
+
+		if (
+			!matchingCommand ||
+			!matchingCommand.arguments ||
+			input !== matchingCommand.name ||
+			(document.activeElement as HTMLElement).dataset.argument
+		)
+			return;
+
+		for (let index = 0; index < matchingCommand.arguments.length; index++) {
+			const argument = matchingCommand.arguments[index];
+
+			if (argument.required && !commandValues[index]) return;
+		}
+
+		const command = `${matchingCommand.name} ${commandValues.join(' ')}`;
+
+		fetchNui('submit', {
+			command,
+		}).then(() => toggleDisplay(false));
+	});
+
+	useNuiEvent<boolean>('toggleMenu', toggleDisplay);
+
 	return (
-		<main className="absolute w-[650px] min-h-24 max-h-[600px] bg-background border rounded-xl">
-			<div
-				data-focus
-				className="relative w-full px-4 py-3 h-14 flex items-center border-b"
-				onClick={focusInput}
+		<div className="absolute translate-y-1/4 w-[650px] h-[350px]">
+			<CSSTransition
+				in={display}
+				timeout={500}
+				classNames="cmd-menu"
+				unmountOnExit
 			>
-				<span
-					ref={inputRef}
-					data-focus
-					contentEditable
-					suppressContentEditableWarning
-					className="max-w-full text-sm font-medium text-foreground outline-none"
-					onInput={(e) => {
-						e.preventDefault();
-						setInput(e.currentTarget.textContent ?? '');
-					}}
-				/>
-				<span data-focus className="text-foreground/25">
-					{matchingCommand?.name.substring(
-						input.split(' ')[0].trim().length,
-					) ||
-						(!input.length && 'Enter Command')}
-				</span>
-				<div className="flex items-center gap-2 ml-3">
-					{matchingCommand?.arguments?.map((argument, i) => (
-						<Argument
-							key={i}
-							index={i}
-							{...argument}
-							visible={isInputMatching}
+				<main className="w-[650px] min-h-24 max-h-[350px] bg-background border rounded-xl">
+					<div
+						data-focus
+						className="relative w-full px-4 py-3 h-14 flex items-center border-b"
+						onClick={focusInput}
+					>
+						<span
+							ref={inputRef}
+							data-focus
+							contentEditable
+							suppressContentEditableWarning
+							className="max-w-full text-sm font-medium text-foreground outline-none"
+							onInput={(e) => {
+								e.preventDefault();
+								setInput(e.currentTarget.textContent ?? '');
+							}}
 						/>
-					))}
-				</div>
-				<span
-					className={cn(
-						'flex gap-2 items-center px-1.5 py-1 bg-accent/80 rounded-md text-sm text-foreground translate-x-2 ml-auto opacity-0 transition-all duration-300',
-						isInputMatching && 'opacity-100 translate-x-0',
-					)}
-				>
-					<ArrowRightToLine size={15} />
-				</span>
-			</div>
-			<Results />
-		</main>
+						<span
+							data-focus
+							className="text-sm font-medium text-foreground/25"
+						>
+							{matchingCommand?.name.substring(
+								input.split(' ')[0].trim().length,
+							) ||
+								(!input.length && 'Enter Command')}
+						</span>
+						<div className="flex items-center gap-2 ml-3">
+							{matchingCommand?.arguments?.map((argument, i) => (
+								<Argument
+									key={i}
+									index={i}
+									{...argument}
+									visible={isInputMatching}
+								/>
+							))}
+						</div>
+						<span
+							className={cn(
+								'flex gap-2 items-center px-1.5 py-1 bg-accent/80 rounded-md text-sm text-foreground translate-x-2 ml-auto opacity-0 transition-all duration-300',
+								isInputMatching && 'opacity-100 translate-x-0',
+							)}
+						>
+							<ArrowRightToLine size={15} />
+						</span>
+					</div>
+					<Results />
+				</main>
+			</CSSTransition>
+		</div>
 	);
 }

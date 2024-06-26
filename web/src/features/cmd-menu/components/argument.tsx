@@ -56,7 +56,13 @@ export default function Argument({
 				}
 				onBlur={() => setFocusedArgument(undefined)}
 			/>
-			<span className="absolute text-[9px] text-foreground/25 bottom-0 translate-y-4">
+			<span
+				className={cn(
+					'absolute text-[9px] text-foreground/25 bottom-0 translate-y-4',
+					required &&
+						'after:content-["*"] after:ml-1 after:text-red-600',
+				)}
+			>
 				{name}
 			</span>
 		</div>

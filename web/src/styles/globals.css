@@ -69,8 +69,35 @@
 }
 
 body,
-html {
+html,
+#app {
 	@apply w-screen h-screen grid place-items-center;
+}
+
+.cmd-menu-enter {
+	opacity: 0;
+	filter: blur(2px);
+	transform: translateY(10px);
+}
+
+.cmd-menu-enter-active {
+	opacity: 1;
+	filter: blur(0);
+	transform: translateY(0);
+	transition: opacity 500ms, transform 500ms, filter 500ms;
+}
+
+.cmd-menu-exit {
+	opacity: 1;
+	filter: blur(0);
+	transform: translateY(0);
+}
+
+.cmd-menu-exit-active {
+	opacity: 0;
+	filter: blur(2px);
+	transform: translateY(10px);
+	transition: opacity 500ms, transform 500ms, filter 500ms;
 }
 
 ::-webkit-scrollbar {
