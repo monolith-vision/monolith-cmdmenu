@@ -35,6 +35,10 @@ export default function CommandMenu() {
 		input.split(' ')[0].trim().toLowerCase() === matchingCommand?.name;
 
 	useEffect(() => {
+		fetchNui('NuiFocus', { display });
+	}, [display]);
+
+	useEffect(() => {
 		setCommandValues([]);
 	}, [matchingCommand, setCommandValues]);
 
@@ -166,10 +170,10 @@ export default function CommandMenu() {
 			if (argument.required && !commandValues[index]) return;
 		}
 
-		const command = `${matchingCommand.name} ${commandValues.join(' ')}`;
-
-		fetchNui('submit', {
-			command,
+		fetchNui('Submit', {
+			raw: input,
+			name: matchingCommand.name,
+			arguments: commandValues,
 		}).then(() => toggleDisplay(false));
 	});
 
