@@ -3,8 +3,22 @@ game 'gta5'
 lua54 'yes'
 
 ui_page 'web/dist/index.html'
-file 'web/dist/**'
+files {
+  'web/dist/**',
+  'shared/modules/console.lua'
+}
 
-client_script 'client/main.lua'
+shared_scripts {
+  'shared/classes/actions.lua',
+  'shared/main.lua'
+}
 
-server_script 'server/main.lua'
+client_scripts {
+  'client/classes/nui.lua',
+  'client/main.lua'
+}
+
+server_scripts {
+  'server/classes/players.lua',
+  'server/main.lua'
+}
