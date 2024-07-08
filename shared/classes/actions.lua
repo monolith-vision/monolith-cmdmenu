@@ -1,6 +1,6 @@
 local Console = require 'shared.modules.console';
 
----@overload fun(self: self)
+---@overload fun(name: string, func: CommandExecution, argumentTypes?: CommandArgument[], isCommand?: boolean, restricted?: CommandRestriction): NewCommand
 Actions = setmetatable({
   overwriteWarning = 'Overwriting command `%s`',
   executionError = 'Error occured while executing command `%s`'
@@ -14,9 +14,9 @@ Actions = setmetatable({
 ---@param func fun(source: number, arguments: (number | string | nil)[], rawCommand?: string) `source` will always be 0 on the client
 ---@param argumentTypes? CommandArgument[]
 ---@param isCommand? boolean Determines if a command should also be registered
----@param restricted? boolean isCommand has to be `true`. Determines if the registered command should be restricted
+---@param restricted? boolean | fun(source: number): boolean Determines if the registered command should be restricted
 ---@return NewCommand
-function Actions.Register(self, name, func, argumentTypes, isCommand, restricted)
+function Actions:Register(name, func, argumentTypes, isCommand, restricted)
   if not self then
     self = Actions;
   end
@@ -31,6 +31,12 @@ function Actions.Register(self, name, func, argumentTypes, isCommand, restricted
   ---@param arguments (number | string | nil)[]
   ---@param rawCommand? string
   local function execute(source, arguments, rawCommand)
+    if restricted ~= nil then
+      if type(restricted) == 'function' and not restricted(CONTEXT == 'server' and source or GetPlayerServerId(PlayerId())) then
+        return;
+      end
+    end
+
     local success, error = pcall(func, source, arguments, rawCommand);
 
     if not success then
@@ -43,14 +49,30 @@ function Actions.Register(self, name, func, argumentTypes, isCommand, restricted
   CACHED_ACTIONS[name] = {
     name = name,
     arguments = argumentTypes,
-    execute = execute
+    execute = execute,
+    context = CONTEXT
   };
 
   if isCommand then
-    RegisterCommand(name, function(source, args, rawCommand)
-      execute(source, args, rawCommand);
-    end, restricted);
+    RegisterCommand(name, execute, type(restricted) == 'function' or restricted == true);
   end
 
   return CACHED_ACTIONS[name];
 end
+
+local function RegisterAction(name, func, argumentTypes, isCommand, restricted)
+  return Actions:Register(name, func, argumentTypes, isCommand, restricted);
+end
+
+local function AddArguments(name, argumentTypes)
+  CACHED_ACTIONS[name] = {
+    name = name,
+    argumentTypes = argumentTypes,
+  };
+end
+
+exports('RegisterAction', RegisterAction);
+exports('AddArguments', AddArguments);
+
+AddEventHandler('cmd-menu:RegisterAction', RegisterAction);
+AddEventHandler('cmd-menu:AddArguments', RegisterAction);

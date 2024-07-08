@@ -28,6 +28,7 @@ export default function Argument({
 		if (inputRef.current.childNodes[0])
 			setTextRange(inputRef.current.childNodes[0], value.length);
 	}, [commandValues, inputRef, index]);
+
 	return (
 		<div
 			key={name}
@@ -43,7 +44,14 @@ export default function Argument({
 				contentEditable
 				onInput={(e) => {
 					e.preventDefault();
-					commandValues[index] = e.currentTarget.textContent ?? '';
+
+					const number = Number(e.currentTarget.textContent);
+
+					commandValues[index] =
+						type === 'number'
+							? number
+							: e.currentTarget.textContent;
+
 					setCommandValues([...commandValues]);
 				}}
 				onFocus={() =>

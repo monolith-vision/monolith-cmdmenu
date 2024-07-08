@@ -166,12 +166,22 @@ export default function CommandMenu() {
 
 		for (let index = 0; index < matchingCommand.arguments.length; index++) {
 			const argument = matchingCommand.arguments[index];
+			const argumentType = typeof commandValues[index];
 
 			if (argument.required && !commandValues[index]) return;
+
+			if (
+				argument.required &&
+				argument.type === 'string' &&
+				argumentType !== 'string'
+			)
+				return;
 		}
 
 		fetchNui('Submit', {
-			raw: input,
+			raw: `${input} ${commandValues
+				.map((v) => (typeof v === 'string' ? `"${v}"` : v))
+				.join(' ')}`,
 			name: matchingCommand.name,
 			arguments: commandValues,
 		}).then(() => toggleDisplay(false));

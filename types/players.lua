@@ -1,0 +1,3 @@
+---@class Player
+---@field name string
+---@field id number
