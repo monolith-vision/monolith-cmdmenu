@@ -1,18 +1,18 @@
-Players = {};
-
-local EXECUTION_ERROR <const>, SUGGESTIONS <const> = 'Unable to execute action `%s`', {};
 local Console <const>, Input <const>, NUI <const> =
     require 'shared.modules.console', require 'client.modules.input', require 'client.modules.nui';
 
+local blockedCommandsSet <const>, SUGGESTIONS <const> = {}, {};
+local SERVER_COMMANDS, Players = {}, {};
+
+local EXECUTION_ERROR <const> = 'Unable to execute action `%s`';
 local blockedCommandsString <const> = table.concat(Config.blockedCommands, '|'):lower();
-local blockedCommandsSet = {};
 
 for _, blockedCommand in next, Config.blockedCommands do
   blockedCommandsSet[blockedCommand:lower()] = 0;
 end
 
 Input('K', function()
-  if not IsControlPressed(0, 36) and not IsPauseMenuActive() and not IsNuiFocused() then
+  if not Config.ctrlKey and not IsControlPressed(0, 36) and not IsPauseMenuActive() and not IsNuiFocused() then
     return;
   end
 
@@ -37,26 +37,35 @@ Input('K', function()
   ---@type Command[]
   local commands = {};
 
-  for _, command in next, GetRegisteredCommands() do
-    if not isCommandBlocked(command.name) then
-      local action = CACHED_ACTIONS[command.name] or SUGGESTIONS[command.name] or {};
+  for _, commandsSet in next, { GetRegisteredCommands(), SERVER_COMMANDS } do
+    for _, command in next, commandsSet do
+      if not isCommandBlocked(command.name) then
+        local action = CACHED_ACTIONS[command.name] or SUGGESTIONS[command.name] or {};
 
-      commands[#commands + 1] = {
-        name = command.name,
-        arity = command.name,
-        arguments = action?.arguments
-      };
+        commands[#commands + 1] = {
+          name = command.name,
+          arity = command.name,
+          arguments = action?.arguments
+        };
+      end
     end
   end
 
   NUI:Send('UpdateCommands', commands);
   NUI:Send('ToggleMenu', true);
+  NUI:Send('UpdatePlayers', Players);
 end);
 
-AddStateBagChangeHandler('players', '', function(_, _, value)
-  Players = value;
+RegisterNetEvent('cmd-menu:UpdatePlayers', function(value)
+  local players = {};
 
-  NUI:Send('UpdatePlayers', value);
+  for _, player in next, value do
+    players[#players + 1] = player;
+  end
+
+  Players = players;
+
+  NUI:Send('UpdatePlayers', players);
 end);
 
 ---@param args? { name: string; help?: string; validate?: boolean; type?: string }[]
@@ -81,7 +90,7 @@ local function generateArguments(args)
 end
 
 RegisterNetEvent('chat:addSuggestion', function(name, _desc, arguments)
-  name = name:sub(2, #name - 1);
+  name = name:sub(2, #name);
 
   SUGGESTIONS[name] = {
     name = name,
@@ -91,11 +100,10 @@ RegisterNetEvent('chat:addSuggestion', function(name, _desc, arguments)
 end);
 
 RegisterNetEvent('chat:removeSuggestion', function(name)
-  name = name:sub(2, #name - 1);
+  name = name:sub(2, #name);
 
-  if SUGGESTIONS[name] then
-    SUGGESTIONS[name] = nil;
-  end
+  SUGGESTIONS[name] = nil;
+  CACHED_ACTIONS[name] = nil;
 end);
 
 RegisterNetEvent('cmd-menu:AddAction', function(key, action)
@@ -106,6 +114,10 @@ RegisterNetEvent('cmd-menu:AddActions', function(actions)
   for key, action in next, actions do
     CACHED_ACTIONS[key] = action;
   end
+end);
+
+RegisterNetEvent('cmd-menu:UpdateServerCommands', function(commands)
+  SERVER_COMMANDS = commands;
 end);
 
 RegisterNUICallback('NuiFocus', function(req, resp)

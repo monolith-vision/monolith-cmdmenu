@@ -62,7 +62,6 @@ export default function Argument({
 						required,
 					})
 				}
-				onBlur={() => setFocusedArgument(undefined)}
 			/>
 			<span
 				className={cn(

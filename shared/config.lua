@@ -1,6 +1,6 @@
 Config = {
-  -- Determines if the menu can only be opened, while pressing the CTRL Key
-  ctrlKey = true,
+  -- Determines if the menu can only be opened, while pressing the ALT Key
+  altKey = true,
   blockedCommands = {
     '+',
     '-',
@@ -72,7 +72,9 @@ Config = {
     'unbindall',
     'vid_',
     'voice_',
+    'vstr',
     'wait',
-    'warningMessageResult'
+    'warningMessageResult',
+    'web_',
   }
 };

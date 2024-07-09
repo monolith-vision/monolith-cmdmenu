@@ -87,18 +87,6 @@ export default function CommandMenu() {
 		setFocusedArgument,
 	]);
 
-	useNuiEvent<boolean>('ToggleMenu', toggleDisplay);
-
-	useNuiEvent<Command[]>('UpdateCommands', (commands) =>
-		setCommands(
-			commands.sort((a, b) =>
-				a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
-			),
-		),
-	);
-
-	useNuiEvent<Player[]>('UpdatePlayers', setPlayers);
-
 	const focusInput: React.MouseEventHandler<HTMLDivElement> = (e) => {
 		if (!inputRef.current || !(e.target as HTMLElement).dataset.focus)
 			return;
@@ -128,30 +116,32 @@ export default function CommandMenu() {
 	};
 
 	useKeyDown('Tab', (e) => {
-		if (!matchingCommand || !inputRef.current) return;
-
 		e.preventDefault();
 
-		if (inputRef.current.textContent === matchingCommand.name) {
-			const elements = document.querySelectorAll('[data-argument]');
-			const totalElements = elements.length;
+		setTimeout(() => {
+			if (!matchingCommand || !inputRef.current) return;
 
-			let nextIndex = (focusedIndex + 1) % (totalElements + 1);
-			if (nextIndex === totalElements) nextIndex = -1;
+			if (inputRef.current.textContent === matchingCommand.name) {
+				const elements = document.querySelectorAll('[data-argument]');
+				const totalElements = elements.length;
 
-			setFocusedIndex(nextIndex);
-			focusElement(nextIndex);
+				let nextIndex = (focusedIndex + 1) % (totalElements + 1);
+				if (nextIndex === totalElements) nextIndex = -1;
 
-			return;
-		}
+				setFocusedIndex(nextIndex);
+				focusElement(nextIndex);
 
-		inputRef.current.textContent = matchingCommand.name;
-		setInput(matchingCommand.name);
+				return;
+			}
 
-		setTextRange(
-			inputRef.current.childNodes[0],
-			matchingCommand.name.length,
-		);
+			inputRef.current.textContent = matchingCommand.name;
+			setInput(matchingCommand.name);
+
+			setTextRange(
+				inputRef.current.childNodes[0],
+				matchingCommand.name.length,
+			);
+		}, 10);
 	});
 
 	useKeyDown('Escape', () => {
@@ -201,6 +191,18 @@ export default function CommandMenu() {
 			arguments: commandValues,
 		}).then(() => toggleDisplay(false));
 	});
+
+	useNuiEvent<boolean>('ToggleMenu', toggleDisplay);
+
+	useNuiEvent<Command[]>('UpdateCommands', (commands) =>
+		setCommands(
+			commands.sort((a, b) =>
+				a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
+			),
+		),
+	);
+
+	useNuiEvent<Player[]>('UpdatePlayers', setPlayers);
 
 	return (
 		<div className="absolute translate-y-1/4 w-[650px] h-[350px] overflow-hidden">

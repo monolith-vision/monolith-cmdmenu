@@ -2,7 +2,16 @@ local Players <const> = require 'server.modules.players';
 local Console <const> = require 'shared.modules.console';
 local EXECUTION_ERROR <const> = 'Unable to execute action `%s`. Triggered by: %s';
 
-AddEventHandler('playerJoining', function(source)
+local function onResourceUpdate()
+  TriggerClientEvent('cmd-menu:UpdateServerCommands', -1, GetRegisteredCommands());
+end
+
+AddEventHandler('onResourceStop', onResourceUpdate);
+AddEventHandler('onResourceStart', onResourceUpdate);
+
+AddEventHandler('playerJoining', function()
+  local source = source;
+
   Players:Add(source);
 end);
 

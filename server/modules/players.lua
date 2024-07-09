@@ -1,7 +1,5 @@
 local Console = require 'shared.modules.console';
 
-GlobalState:set('players', {}, true);
-
 ---@overload fun(self: self): table<number, Player>
 ---@class Players
 local Players = setmetatable({
@@ -26,8 +24,6 @@ function Players:Add(source)
     id = id,
   };
 
-  GlobalState:set('players', self.cached, true);
-
   local actions = {};
 
   for key, action in next, actions do
@@ -39,6 +35,8 @@ function Players:Add(source)
   end
 
   TriggerClientEvent('cmd-menu:AddActions', id, actions);
+  TriggerClientEvent('cmd-menu:UpdateServerCommands', id, GetRegisteredCommands());
+  TriggerClientEvent('cmd-menu:UpdatePlayers', -1, self.cached);
 end
 
 ---@param source string | number
@@ -51,7 +49,7 @@ function Players:Remove(source)
 
   self.cached[id] = nil;
 
-  GlobalState:set('players', self.cached, true);
+  TriggerClientEvent('cmd-menu:UpdatePlayers', -1, self.cached);
 end
 
 return Players;
