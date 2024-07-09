@@ -1,15 +1,14 @@
 Players = {};
 
-local EXECUTION_ERROR <const> = 'Unable to execute action `%s`';
-local Console <const> = require 'shared.modules.console';
-local Input <const> = require 'client.modules.input';
-local NUI <const> = require 'client.modules.nui';
+local EXECUTION_ERROR <const>, SUGGESTIONS <const> = 'Unable to execute action `%s`', {};
+local Console <const>, Input <const>, NUI <const> =
+    require 'shared.modules.console', require 'client.modules.input', require 'client.modules.nui';
 
-local blockedCommandsString <const> = table.concat(Config.blockedCommands, '|');
+local blockedCommandsString <const> = table.concat(Config.blockedCommands, '|'):lower();
 local blockedCommandsSet = {};
 
 for _, blockedCommand in next, Config.blockedCommands do
-  blockedCommandsSet[blockedCommand] = 0;
+  blockedCommandsSet[blockedCommand:lower()] = 0;
 end
 
 Input('K', function()
@@ -20,6 +19,8 @@ Input('K', function()
   ---@param commandName string
   ---@return boolean;
   local function isCommandBlocked(commandName)
+    commandName = commandName:lower();
+
     if blockedCommandsString:find(commandName) then
       return true;
     end
@@ -37,8 +38,8 @@ Input('K', function()
   local commands = {};
 
   for _, command in next, GetRegisteredCommands() do
-    if not isCommandBlocked(command) then
-      local action = CACHED_ACTIONS[command.name] or {};
+    if not isCommandBlocked(command.name) then
+      local action = CACHED_ACTIONS[command.name] or SUGGESTIONS[command.name] or {};
 
       commands[#commands + 1] = {
         name = command.name,
@@ -58,6 +59,45 @@ AddStateBagChangeHandler('players', '', function(_, _, value)
   NUI:Send('UpdatePlayers', value);
 end);
 
+---@param args? { name: string; help?: string; validate?: boolean; type?: string }[]
+---@return NewCommand[]?
+local function generateArguments(args)
+  if not args then
+    return;
+  end
+
+  ---@type CommandArgument[]
+  local arguments = {};
+
+  for _, arg in next, args do
+    arguments[#arguments + 1] = {
+      name = arg.name,
+      type = arg.type == 'player' and 'playerId' or arg.type --[[@as CommandArgumentTypes]],
+      required = arg.validate,
+    };
+  end
+
+  return arguments;
+end
+
+RegisterNetEvent('chat:addSuggestion', function(name, _desc, arguments)
+  name = name:sub(2, #name - 1);
+
+  SUGGESTIONS[name] = {
+    name = name,
+    arity = 0,
+    arguments = generateArguments(arguments)
+  };
+end);
+
+RegisterNetEvent('chat:removeSuggestion', function(name)
+  name = name:sub(2, #name - 1);
+
+  if SUGGESTIONS[name] then
+    SUGGESTIONS[name] = nil;
+  end
+end);
+
 RegisterNetEvent('cmd-menu:AddAction', function(key, action)
   CACHED_ACTIONS[key] = action;
 end);
@@ -75,21 +115,19 @@ RegisterNUICallback('NuiFocus', function(req, resp)
 end);
 
 RegisterNUICallback('Submit', function(req, resp)
+  resp('OK');
+
   local action = CACHED_ACTIONS[req.name];
 
-  if not action then
+  if not action or action.context == 'client' and not action.execute then
     Console.Debug(('Can\'t find action `%s`. Executing Command'):format(req.name));
 
-    return ExecuteCommand(req.raw);
-  end
-
-  if action.context == 'server' then
+    ExecuteCommand(req.raw);
+  elseif action.context == 'server' then
     TriggerServerEvent('cmd-menu:ExecuteAction', req.name, req.arguments, req.raw);
-  elseif action.context == 'client' and action.execute then
+  elseif action.context == 'client' then
     action.execute(0, req.arguments, req.raw);
   else
     Console.Error(EXECUTION_ERROR:format(req.name));
   end
-
-  resp('OK');
 end);
