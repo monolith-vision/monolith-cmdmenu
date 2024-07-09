@@ -3,7 +3,8 @@ local Console = require 'shared.modules.console';
 ---@overload fun(name: string, func: CommandExecution, argumentTypes?: CommandArgument[], isCommand?: boolean, restricted?: CommandRestriction): NewCommand
 Actions = setmetatable({
   overwriteWarning = 'Overwriting command `%s`',
-  executionError = 'Error occured while executing command `%s`'
+  executionError = 'Error occured while executing command `%s`',
+  requiredError = 'A non-required argument can\'t be followed by a required argument'
 }, {
   __call = function(self, ...)
     return self.Register(self, ...);
@@ -25,6 +26,14 @@ function Actions:Register(name, func, argumentTypes, isCommand, restricted)
 
   if CACHED_ACTIONS[name] then
     Console.Warn(self.overwriteWarning:format(name));
+  end
+
+  if argumentTypes then
+    for index, argument in next, argumentTypes do
+      if index > 1 and not argumentTypes[index - 1]?.required and argument.required then
+        error(self.requiredError);
+      end
+    end
   end
 
   ---@param source number
@@ -67,6 +76,7 @@ end
 local function AddArguments(name, argumentTypes)
   CACHED_ACTIONS[name] = {
     name = name,
+    context = CONTEXT,
     argumentTypes = argumentTypes,
   };
 end
