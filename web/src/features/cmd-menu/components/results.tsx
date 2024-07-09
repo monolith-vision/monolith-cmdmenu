@@ -62,6 +62,15 @@ export default function Results() {
 
 			if (index < 0) index = contextArray.length - 1;
 
+			document
+				.querySelectorAll('[data-result]')
+				.item(index)
+				?.scrollIntoView({
+					block: 'center',
+					inline: 'nearest',
+					behavior: 'smooth',
+				});
+
 			return index;
 		});
 	});
@@ -73,6 +82,15 @@ export default function Results() {
 			let index = Math.min(contextArray.length, prevIndex + 1);
 
 			if (index === contextArray.length) index = 0;
+
+			document
+				.querySelectorAll('[data-result]')
+				.item(index)
+				?.scrollIntoView({
+					block: 'center',
+					inline: 'nearest',
+					behavior: 'smooth',
+				});
 
 			return index;
 		});
@@ -125,7 +143,7 @@ export default function Results() {
 	useKeyDown('Tab', select);
 
 	return (
-		<div className="flex flex-col gap-1 overflow-y-scroll p-2">
+		<div className="relative flex flex-col gap-1 max-h-[292px] overflow-y-scroll p-2">
 			{!results.length && (
 				<span className="my-2 text-center text-foreground/25">
 					No Results

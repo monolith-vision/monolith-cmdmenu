@@ -35,6 +35,8 @@ export default function CommandMenu() {
 		input.split(' ')[0].trim().toLowerCase() === matchingCommand?.name;
 
 	useEffect(() => {
+		if (display) inputRef.current?.focus();
+
 		fetchNui('NuiFocus', { display });
 	}, [display]);
 
@@ -152,43 +154,56 @@ export default function CommandMenu() {
 		);
 	});
 
+	useKeyDown('Escape', () => {
+		toggleDisplay(false);
+	});
+
 	useKeyDown('Enter', (e) => {
 		e.preventDefault();
 
 		if (
 			!matchingCommand ||
-			!matchingCommand.arguments ||
 			input !== matchingCommand.name ||
 			((document.activeElement as HTMLElement).dataset.argument &&
 				!e.shiftKey)
 		)
 			return;
 
-		for (let index = 0; index < matchingCommand.arguments.length; index++) {
-			const argument = matchingCommand.arguments[index];
-			const argumentType = typeof commandValues[index];
+		if (matchingCommand.arguments) {
+			for (
+				let index = 0;
+				index < matchingCommand.arguments.length;
+				index++
+			) {
+				const argument = matchingCommand.arguments[index];
+				const argumentType = typeof commandValues[index];
 
-			if (argument.required && !commandValues[index]) return;
+				if (argument.required && !commandValues[index]) return;
 
-			if (
-				argument.required &&
-				argument.type === 'string' &&
-				argumentType !== 'string'
-			)
-				return;
+				if (
+					argument.required &&
+					argument.type === 'string' &&
+					argumentType !== 'string'
+				)
+					return;
+			}
 		}
 
 		fetchNui('Submit', {
-			raw: `${input} ${commandValues
-				.map((v) => (typeof v === 'string' ? `"${v}"` : v))
-				.join(' ')}`,
+			raw: `${input} ${
+				commandValues.length
+					? commandValues
+							.map((v) => (typeof v === 'string' ? `"${v}"` : v))
+							.join(' ')
+					: ''
+			}`.trim(),
 			name: matchingCommand.name,
 			arguments: commandValues,
 		}).then(() => toggleDisplay(false));
 	});
 
 	return (
-		<div className="absolute translate-y-1/4 w-[650px] h-[350px]">
+		<div className="absolute translate-y-1/4 w-[650px] h-[350px] overflow-hidden">
 			<CSSTransition
 				in={display}
 				timeout={500}

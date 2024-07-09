@@ -19,11 +19,14 @@ export default function Commands({
 		<>
 			{results.map((command, index) => (
 				<button
-					key={command.name}
+					key={`${command.name}${index}`}
+					data-result
 					className={cn(
-						'relative flex items-center justify-start p-2 rounded-lg z-0 opacity-50 transition-opacity',
-						'before:absolute before:bg-accent/40 before:inset-[99px] before:-z-[1] before:rounded-[inherit] before:duration-300 before:border before:border-border',
-						selected === index && 'before:inset-0 opacity-100',
+						'relative flex items-center justify-start p-2 rounded-lg z-0 opacity-50 transition-all',
+						'before:absolute before:bg-accent/40 before:inset-[99px] before:-z-[1] before:rounded-[inherit] before:duration-300 before:opacity-0',
+						'before:border-transparent',
+						selected === index &&
+							'before:inset-0 before:opacity-100 before:border before:border-border opacity-100',
 					)}
 					onClick={() => setSelected(index)}
 				>
