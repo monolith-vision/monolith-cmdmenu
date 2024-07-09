@@ -6,7 +6,7 @@ debug_mode 'true';
 allowed_logs {
   'warn',
   'error',
-  -- 'info',
+  'info',
 }
 
 ui_page 'web/dist/index.html'
@@ -20,10 +20,10 @@ files {
 }
 
 shared_scripts {
+  'shared/main.lua',
+  'shared/config.lua',
   'shared/lib/require.lua',
   'shared/classes/actions.lua',
-  'shared/config.lua',
-  'shared/main.lua'
 }
 
 client_script 'client/main.lua'
