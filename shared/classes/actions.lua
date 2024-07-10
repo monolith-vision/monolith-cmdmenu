@@ -85,4 +85,4 @@ exports('RegisterAction', RegisterAction);
 exports('AddArguments', AddArguments);
 
 AddEventHandler('cmd-menu:RegisterAction', RegisterAction);
-AddEventHandler('cmd-menu:AddArguments', RegisterAction);
+AddEventHandler('cmd-menu:AddArguments', AddArguments);
