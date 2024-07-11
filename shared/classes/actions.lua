@@ -40,11 +40,22 @@ function Actions:Register(name, func, argumentTypes, isCommand, restricted)
   ---@param arguments (number | string | nil)[]
   ---@param rawCommand? string
   local function execute(source, arguments, rawCommand)
-    if restricted ~= nil then
-      if type(restricted) == 'function' and not restricted(CONTEXT == 'server' and source or GetPlayerServerId(PlayerId())) then
+    if restricted == nil then
+      goto continue
+    end
+
+    if restricted == true and CONTEXT == 'server' then
+      if not IsPlayerAceAllowed('' .. source, 'command.' .. name) then
         return;
       end
+    elseif
+        type(restricted) == 'function' and
+        not restricted(CONTEXT == 'server' and source or GetPlayerServerId(PlayerId()))
+    then
+      return;
     end
+
+    ::continue::
 
     local success, error = pcall(func, source, arguments, rawCommand);
 
