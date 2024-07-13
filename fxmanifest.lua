@@ -13,8 +13,7 @@ allowed_logs {
   'info',
 }
 
--- ui_page 'web/dist/index.html'
-ui_page 'http://localhost:5137'
+ui_page 'web/dist/index.html'
 files {
   'web/dist/**',
   -- Shared Modules
