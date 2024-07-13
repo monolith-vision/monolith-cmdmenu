@@ -3,7 +3,7 @@ game 'gta5'
 lua54 'yes'
 
 author 'Open Source by Monolith Vision and Contributors'
-version '1.0.0'
+version '1.0.1'
 description 'A menu to look up existing commands or actions.'
 
 debug_mode 'true';
