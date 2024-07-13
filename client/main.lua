@@ -38,13 +38,21 @@ Input('K', function()
 
   ---@type Command[]
   local commands = {};
+  local addedCommands = {};
 
   for _, commandsSet in next, { GetRegisteredCommands(), SERVER_COMMANDS } do
     for _, command in next, commandsSet do
       if not isCommandBlocked(command.name) then
         local action = CACHED_ACTIONS[command.name] or SUGGESTIONS[command.name] or {};
+        local index = #commands + 1;
 
-        commands[#commands + 1] = {
+        if addedCommands[command.name] then
+          index = addedCommands[command.name];
+        else
+          addedCommands[command.name] = index;
+        end
+
+        commands[index] = {
           name = command.name,
           arity = 0,
           arguments = action?.arguments
