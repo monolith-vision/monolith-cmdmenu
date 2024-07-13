@@ -12,7 +12,9 @@ for _, blockedCommand in next, Config.blockedCommands do
 end
 
 Input('K', function()
-  if Config.ctrlKey and not IsControlPressed(0, 36) and not IsPauseMenuActive() and not IsNuiFocused() then
+  if (Config.ctrlKey and not IsControlPressed(0, 36)) or
+      (IsPauseMenuActive() and IsNuiFocused())
+  then
     return;
   end
 
@@ -21,7 +23,7 @@ Input('K', function()
   local function isCommandBlocked(commandName)
     commandName = commandName:lower();
 
-    if blockedCommandsString:find(commandName) then
+    if #commandName > 2 and blockedCommandsString:find(commandName) then
       return true;
     end
 
@@ -44,7 +46,7 @@ Input('K', function()
 
         commands[#commands + 1] = {
           name = command.name,
-          arity = command.name,
+          arity = 0,
           arguments = action?.arguments
         };
       end

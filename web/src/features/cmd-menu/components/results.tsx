@@ -41,7 +41,7 @@ export default function Results() {
 		const lowered = input.split(' ')[0].trim().toLowerCase();
 
 		setResults(
-			commands.filter((c) => c.name.toLowerCase().search(lowered) > -1),
+			commands.filter((c) => c.name.toLowerCase().startsWith(lowered)),
 		);
 	}, [input, commands]);
 

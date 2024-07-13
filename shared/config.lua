@@ -1,6 +1,6 @@
 Config = {
   -- Determines if the menu can only be opened, while pressing the ALT Key
-  altKey = true,
+  ctrlKey = true,
   blockedCommands = {
     '+',
     '-',
@@ -51,7 +51,7 @@ Config = {
     'replayEditor',
     'save_gta_cache',
     'se_debug',
-    'set',
+    'set_',
     'showinv',
     'svgui',
     'steam_webApiKey',
