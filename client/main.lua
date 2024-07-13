@@ -12,7 +12,7 @@ for _, blockedCommand in next, Config.blockedCommands do
 end
 
 Input('K', function()
-  if not Config.ctrlKey and not IsControlPressed(0, 36) and not IsPauseMenuActive() and not IsNuiFocused() then
+  if Config.ctrlKey and not IsControlPressed(0, 36) and not IsPauseMenuActive() and not IsNuiFocused() then
     return;
   end
 
