@@ -2,6 +2,10 @@ fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
 
+author 'Open Source by Monolith Vision and Contributors'
+version '1.0.0'
+description 'A menu to look up existing commands or actions.'
+
 debug_mode 'true';
 allowed_logs {
   'warn',
@@ -9,7 +13,8 @@ allowed_logs {
   'info',
 }
 
-ui_page 'web/dist/index.html'
+-- ui_page 'web/dist/index.html'
+ui_page 'http://localhost:5137'
 files {
   'web/dist/**',
   -- Shared Modules

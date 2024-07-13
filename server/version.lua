@@ -1,4 +1,4 @@
-local UPDATE_RESOURCE = '^3A new update is avaible for %s. %s';
+local UPDATE_RESOURCE <const> = '^3A new update is avaible for %s. %s';
 local BASE_URL <const> = 'https://api.github.com/repos/monolith-vision/%s/releases/latest';
 local RESOURCE_NAME <const> = GetCurrentResourceName();
 local RELEASE_URL <const> = BASE_URL:format(RESOURCE_NAME);
@@ -22,7 +22,7 @@ PerformHttpRequest(RELEASE_URL, function(status, body)
   local release = json.decode(body);
 
   if release.prelease then
-    return print('^3This is a prelease, expect errors to occur.^0');
+    print('^3This is a prelease, expect errors to occur.^0');
   end
 
   local LATEST_VERSION <const> = release.tag_name;
