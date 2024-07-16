@@ -1,7 +1,7 @@
 RESOURCE_NAME = GetCurrentResourceName();
 CONTEXT = IsDuplicityVersion() and 'server' or 'client';
 
-local debugMetaData = GetResourceMetadata(RESOURCE_NAME, 'debug_mode', 1);
+local debugMetaData = GetResourceMetadata(RESOURCE_NAME, 'debug_mode', 0);
 DEBUG = debugMetaData == true or debugMetaData == 'true' or debugMetaData == 'yes' or debugMetaData == 1 or
     debugMetaData == '1';
 
